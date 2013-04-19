@@ -13,7 +13,7 @@ script:
 branches:
     only:
         - master
-        - /^[0-9].*$/
+        - /^.+$/
 notifications:
     irc:
         channels:
