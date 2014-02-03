@@ -1,3 +1,4 @@
+import sys
 from cStringIO import StringIO
 
 from twisted.python import log as txlog, failure
@@ -15,14 +16,18 @@ class LogTest(unittest.TestCase):
         self.assertEqual(log._get_log_level(log.WARNING), log.WARNING)
         self.assertRaises(ValueError, log._get_log_level, object())
 
+
 class ScrapyFileLogObserverTest(unittest.TestCase):
 
     level = log.INFO
     encoding = 'utf-8'
+    logstdout = False
 
     def setUp(self):
         self.f = StringIO()
-        self.sflo = log.ScrapyFileLogObserver(self.f, self.level, self.encoding)
+        self.sflo = log.ScrapyFileLogObserver(self.f, self.level,
+                self.encoding, logstdout=self.logstdout)
+        txlog.startLoggingWithObserver(self.sflo.emit, setStdout=self.logstdout)
         self.sflo.start()
 
     def tearDown(self):
@@ -116,6 +121,19 @@ class ScrapyFileLogObserverTest(unittest.TestCase):
         self.failUnless('Unhandled Error' in self.logged())
         self.failUnless('TypeError' in self.logged())
         self.failUnless('bad type' in self.logged())
+
+
+class LogstdoutScrapyFileLogObserverTest(ScrapyFileLogObserverTest):
+
+    logstdout = True
+
+    def test_log_stdout(self):
+        print 'PRINT: This is a print message'
+        self.assertEqual(self.logged(), '[stdout] INFO: PRINT: This is a print message')
+
+    def test_log_stderr(self):
+        print >> sys.stderr, 'PRINT:: This is a print message to stderr'
+        self.assertEqual(self.logged(), 'PRINT:: This is a print message to stderr')
 
 
 class Latin1ScrapyFileLogObserverTest(ScrapyFileLogObserverTest):
